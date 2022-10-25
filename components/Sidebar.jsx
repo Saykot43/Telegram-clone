@@ -6,10 +6,15 @@ import Image from "next/future/image";
 import DefaultImage from "../public/images/default.png";
 import { useAuthState } from "react-firebase-hooks/auth";
 import { auth } from "../firebase";
+import { signOut } from "firebase/auth";
 
 const Sidebar = () => {
   const [user, loading] = useAuthState(auth);
-//   console.log(user);
+
+  const logout = async () => {
+    await signOut(auth);
+  };
+  //   console.log(user);
   const [search, setSearch] = useState("");
   return (
     <div className=" w-[600px] h-screen p-5 bg-[#191919]">
@@ -30,7 +35,10 @@ const Sidebar = () => {
                 <div className="w-full text-sm font-light py-2 capitalize">
                   {user?.displayName}
                 </div>
-                <div className="w-full text-sm font-light py-2 bg-[#706f6f42] hover:bg-[#0000003d] border border-[#cacaca] rounded-md capitalize">
+                <div
+                  className="w-full text-sm font-light py-2 bg-[#706f6f42] hover:bg-[#0000003d] border border-[#cacaca] rounded-md capitalize"
+                  onClick={logout}
+                >
                   Logout From your account
                 </div>
               </div>
