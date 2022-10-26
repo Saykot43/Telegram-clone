@@ -3,19 +3,38 @@ import { FiMenu } from "react-icons/fi";
 import { AiOutlineSearch } from "react-icons/ai";
 import { IoMdClose } from "react-icons/io";
 import Image from "next/future/image";
-import DefaultImage from "../public/images/default.png";
+// import DefaultImage from "../public/images/default.png";
 import { useAuthState } from "react-firebase-hooks/auth";
-import { auth } from "../firebase";
+import { auth, db } from "../firebase";
 import { signOut } from "firebase/auth";
+import { collection, doc, serverTimestamp, setDoc } from "firebase/firestore";
+import { useCollection } from "react-firebase-hooks/firestore";
+import Card from "./Card";
 
 const Sidebar = () => {
   const [user, loading] = useAuthState(auth);
+  const [search, setSearch] = useState("");
 
   const logout = async () => {
     await signOut(auth);
+    if (user) {
+      setDoc(
+        doc(db, "users", user.uid),
+        {
+          email: user.email,
+          photoURL: user.photoURL,
+          name: user.providerData[0].displayName,
+          lastSeen: serverTimestamp(),
+          online: false,
+        },
+        { merge: true }
+      );
+    }
   };
-  //   console.log(user);
-  const [search, setSearch] = useState("");
+  const usersRef = collection(db, "users");
+  const [userSnapShots, loading2] = useCollection(usersRef);
+  //   console.log(userSnapShots?.docs);
+
   return (
     <div className=" w-[600px] h-screen p-5 bg-[#191919]">
       <div className=" flex items-center w-full space-x-4">
@@ -69,6 +88,23 @@ const Sidebar = () => {
             </div>
           )}
         </div>
+      </div>
+      <div
+        className={
+          search.length > 0
+            ? " w-full h-screen overflow-y-auto mt-5 transition-all"
+            : " w-full h-0 overflow-y-auto mt-5 transition-all"
+        }
+      >
+        {userSnapShots?.docs?.map((item) => {
+          return (
+            <Card
+              key={item.id}
+              name={item.data().name}
+              imageUrl={item.data().photoURL}
+            />
+          );
+        })}
       </div>
     </div>
   );
