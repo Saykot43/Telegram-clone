@@ -7,9 +7,18 @@ import Image from "next/future/image";
 import { useAuthState } from "react-firebase-hooks/auth";
 import { auth, db } from "../firebase";
 import { signOut } from "firebase/auth";
-import { collection, doc, serverTimestamp, setDoc } from "firebase/firestore";
+import {
+  collection,
+  doc,
+  query,
+  serverTimestamp,
+  setDoc,
+  where,
+} from "firebase/firestore";
 import { useCollection } from "react-firebase-hooks/firestore";
 import Card from "./Card";
+import CardLoader from "./CardLoader";
+import ChatCard from "./ChatCard";
 
 const Sidebar = () => {
   const [user, loading] = useAuthState(auth);
@@ -33,7 +42,11 @@ const Sidebar = () => {
   };
   const usersRef = collection(db, "users");
   const [userSnapShots, loading2] = useCollection(usersRef);
-  //   console.log(userSnapShots?.docs);
+  //   console.log(userSnapShots?.docs);.
+
+  const chatsRef = collection(db, "chats");
+  const q = query(chatsRef, where("user", "array-contains", user?.email));
+  const [chatSnapShots, loading3] = useCollection(q);
 
   return (
     <div className=" w-[600px] h-screen p-5 bg-[#191919]">
@@ -96,14 +109,37 @@ const Sidebar = () => {
             : " w-full h-0 overflow-y-auto mt-5 transition-all"
         }
       >
-        {userSnapShots?.docs?.map((item) => {
-          return (
-            <Card
-              key={item.id}
-              name={item.data().name}
-              imageUrl={item.data().photoURL}
-            />
-          );
+        {!loading2 ? (
+          userSnapShots?.docs?.map((item) => {
+            if (
+              item
+                .data()
+                .name.toLowerCase()
+                .includes(search.toLocaleLowerCase()) &&
+              item.data().name !== user?.displayName
+            ) {
+              return (
+                <Card
+                  key={item.id}
+                  name={item.data().name}
+                  imageUrl={item.data().photoURL}
+                  email={item.data().email}
+                  id={item.id}
+                />
+              );
+            }
+          })
+        ) : (
+          <div>
+            <CardLoader />
+            <CardLoader />
+            <CardLoader />
+          </div>
+        )}
+      </div>
+      <div className="w-full h-screen overflow-y-auto mt-2 transition-all">
+        {chatSnapShots?.docs?.map((chat) => {
+          return <ChatCard key={chat.id} chatData={chat} />;
         })}
       </div>
     </div>
